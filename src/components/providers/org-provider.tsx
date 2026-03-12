@@ -10,18 +10,24 @@ const MOCK_ORG_CONTEXT: OrgContextValue = {
   org: {
     id: 'org_mock_001',
     name: 'さくら整体院',
-    plan: 'pro',
+    plan: 'PRO',
   },
   staff: {
     id: 'staff_mock_001',
     name: '田中太郎',
-    role: 'owner',
+    role: 'OWNER',
   },
 }
 
-export function OrgProvider({ children }: { children: React.ReactNode }) {
+export function OrgProvider({
+  value,
+  children,
+}: {
+  value?: OrgContextValue
+  children: React.ReactNode
+}) {
   return (
-    <OrgContext.Provider value={MOCK_ORG_CONTEXT}>
+    <OrgContext.Provider value={value ?? MOCK_ORG_CONTEXT}>
       {children}
     </OrgContext.Provider>
   )

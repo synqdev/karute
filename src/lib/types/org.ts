@@ -1,9 +1,9 @@
-export type StaffRole = 'owner' | 'admin' | 'staff'
+export type StaffRole = 'OWNER' | 'ADMIN' | 'STYLIST' | 'ASSISTANT'
 
 export type Organization = {
   id: string
   name: string
-  plan: 'free' | 'pro' | 'enterprise'
+  plan: 'FREE' | 'PRO'
 }
 
 export type Staff = {

@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useOrg } from '@/components/providers/org-provider'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,7 @@ function formatDate(): string {
 
 export default function DashboardPage() {
   const { staff } = useOrg()
+  const router = useRouter()
 
   return (
     <div className="space-y-8">
@@ -69,10 +71,10 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <div className="flex gap-3">
-        <Button size="lg">
+        <Button size="lg" onClick={() => router.push('/record')}>
           🎙 録音開始
         </Button>
-        <Button variant="outline" size="lg">
+        <Button variant="outline" size="lg" onClick={() => router.push('/customers')}>
           👤 新規顧客
         </Button>
       </div>
