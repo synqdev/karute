@@ -20,7 +20,7 @@ interface TimetableState {
   startRecordingBar: (staffId: string, orgId: string) => void
   stopRecordingBar: () => void
   setBars: (bars: TimelineBar[]) => void
-  loadBars: (orgId: string) => Promise<void>
+  loadBars: (orgId: string, date?: string) => Promise<void>
 }
 
 function nowMinute() {
@@ -81,9 +81,10 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   recordingStartMinute: null,
   loaded: false,
 
-  loadBars: async (orgId: string) => {
+  loadBars: async (orgId: string, date?: string) => {
     try {
-      const res = await fetch(`/api/recordings?orgId=${orgId}&date=${todayDate()}`)
+      const d = date || todayDate()
+      const res = await fetch(`/api/recordings?orgId=${orgId}&date=${d}`)
       if (!res.ok) return
       const sessions = await res.json()
       const bars = sessions.map(sessionToBar)

@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
 import { TimetableWithTabs } from '@/components/calendar/prototype-calendar-view'
 import type { TopTabItem, TimelineBarItem } from '@/components/calendar/prototype-calendar-view'
 import { useOrg } from '@/components/providers/org-provider'
@@ -13,6 +15,28 @@ const TABS: TopTabItem[] = [
   { id: 'schedule', label: 'Schedule', icon: 'calendar' },
   { id: 'clients', label: 'Clients', icon: 'client' },
 ]
+
+function toDateString(d: Date) {
+  return d.toISOString().slice(0, 10)
+}
+
+function formatDisplayDate(d: Date) {
+  const today = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(today.getDate() - 1)
+  const tomorrow = new Date()
+  tomorrow.setDate(today.getDate() + 1)
+
+  if (toDateString(d) === toDateString(today)) return 'Today'
+  if (toDateString(d) === toDateString(yesterday)) return 'Yesterday'
+  if (toDateString(d) === toDateString(tomorrow)) return 'Tomorrow'
+
+  return d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  })
+}
 
 function getCurrentTimeInfo() {
   const now = new Date()
@@ -28,13 +52,32 @@ export default function DashboardPage() {
   const t = useTranslations('dashboard')
   const router = useRouter()
   const { org, allStaff } = useOrg()
-  const { bars, setBars, loadBars, loaded } = useTimetableStore()
+  const { bars, setBars, loadBars } = useTimetableStore()
   const [activeTab, setActiveTab] = useState('schedule')
+  const [selectedDate, setSelectedDate] = useState(() => new Date())
   const currentTime = getCurrentTimeInfo()
+  const isToday = toDateString(selectedDate) === toDateString(new Date())
+
+  const loadForDate = useCallback(
+    (date: Date) => {
+      loadBars(org.id, toDateString(date))
+    },
+    [org.id, loadBars]
+  )
 
   useEffect(() => {
-    if (!loaded) loadBars(org.id)
-  }, [org.id, loaded, loadBars])
+    loadForDate(selectedDate)
+  }, [selectedDate, loadForDate])
+
+  const goDay = (offset: number) => {
+    setSelectedDate((prev) => {
+      const next = new Date(prev)
+      next.setDate(next.getDate() + offset)
+      return next
+    })
+  }
+
+  const goToday = () => setSelectedDate(new Date())
 
   const handleBarClick = (bar: TimelineBarItem) => {
     if (bar.type === 'processing' || bar.type === 'recording') return
@@ -75,6 +118,27 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Date Navigation */}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon-sm" onClick={() => goDay(-1)}>
+          <ChevronLeft className="size-5" />
+        </Button>
+        <button
+          onClick={goToday}
+          className="min-w-[120px] text-center text-sm font-semibold hover:text-foreground/70 transition-colors"
+        >
+          {formatDisplayDate(selectedDate)}
+        </button>
+        <Button variant="ghost" size="icon-sm" onClick={() => goDay(1)}>
+          <ChevronRight className="size-5" />
+        </Button>
+        {!isToday && (
+          <Button variant="outline" size="xs" onClick={goToday}>
+            Today
+          </Button>
+        )}
+      </div>
+
       {/* Timetable */}
       <div className="h-[420px]">
         <TimetableWithTabs
@@ -86,8 +150,8 @@ export default function DashboardPage() {
           onBarsChange={setBars}
           startHour={8}
           endHour={24}
-          currentTimeLabel={currentTime.label}
-          currentMinute={currentTime.minute}
+          currentTimeLabel={isToday ? currentTime.label : undefined}
+          currentMinute={isToday ? currentTime.minute : undefined}
           onBarClick={handleBarClick}
         />
       </div>
