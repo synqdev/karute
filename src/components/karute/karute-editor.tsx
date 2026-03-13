@@ -1,60 +1,38 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import {
   Sparkles,
   Plus,
   FileText,
   FileDown,
   ArrowLeft,
+  Save,
+  Check,
 } from "lucide-react"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { EntryCard, type KaruteEntryData } from "./entry-card"
 import { TranscriptPanel, type TranscriptSegment } from "./transcript-panel"
 import {
   CategoryBadge,
   ALL_CATEGORIES,
-  getCategoryLabel,
   type EntryCategory,
 } from "./category-badge"
+import { useOrg } from "@/components/providers/org-provider"
 import { cn } from "@/lib/utils"
-
-type KaruteStatus = "DRAFT" | "REVIEW" | "APPROVED"
 
 interface KaruteEditorProps {
   karuteId: string
   customerName: string
   staffName: string
   date: string
-  status: KaruteStatus
   aiSummary?: string | null
   entries: KaruteEntryData[]
   segments: TranscriptSegment[]
-}
-
-const statusConfig: Record<
-  KaruteStatus,
-  { label: string; className: string }
-> = {
-  DRAFT: {
-    label: "下書き",
-    className:
-      "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
-  },
-  REVIEW: {
-    label: "確認中",
-    className:
-      "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800",
-  },
-  APPROVED: {
-    label: "承認済",
-    className:
-      "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800",
-  },
 }
 
 export function KaruteEditor({
@@ -62,26 +40,31 @@ export function KaruteEditor({
   customerName,
   staffName,
   date,
-  status: initialStatus,
   aiSummary,
   entries: initialEntries,
   segments,
 }: KaruteEditorProps) {
+  const { org, staff } = useOrg()
+  const t = useTranslations("karute")
+  const tCommon = useTranslations("common")
+
   const [entries, setEntries] = useState<KaruteEntryData[]>(initialEntries)
-  const [status, setStatus] = useState<KaruteStatus>(initialStatus)
   const [showAddForm, setShowAddForm] = useState(false)
   const [newCategory, setNewCategory] = useState<EntryCategory>("OTHER")
   const [newContent, setNewContent] = useState("")
-  const statusInfo = statusConfig[status]
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
 
   const handleUpdateEntry = (id: string, content: string) => {
     setEntries((prev) =>
       prev.map((e) => (e.id === id ? { ...e, content } : e))
     )
+    setSaved(false)
   }
 
   const handleDeleteEntry = (id: string) => {
     setEntries((prev) => prev.filter((e) => e.id !== id))
+    setSaved(false)
   }
 
   const handleAddEntry = () => {
@@ -99,11 +82,36 @@ export function KaruteEditor({
     setNewContent("")
     setNewCategory("OTHER")
     setShowAddForm(false)
+    setSaved(false)
   }
 
-  const handleClassify = () => {
-    // Placeholder for AI classification
-    setStatus("REVIEW")
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await fetch("/api/karute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orgId: org.id,
+          staffId: staff.id,
+          recordingSessionId: karuteId,
+          aiSummary,
+          entries: entries.map((e) => ({
+            category: e.category,
+            content: e.content,
+            originalQuote: e.originalQuote,
+            confidence: e.confidence,
+            tags: e.tags,
+          })),
+        }),
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      console.error("Save failed:", err)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -111,40 +119,43 @@ export function KaruteEditor({
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/karute">
+          <Link href="/dashboard">
             <Button variant="ghost" size="icon-sm">
               <ArrowLeft />
             </Button>
           </Link>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">{customerName}</h1>
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
-                  statusInfo.className
-                )}
-              >
-                {statusInfo.label}
-              </span>
-            </div>
+            <h1 className="text-xl font-bold">
+              {customerName || staffName}
+            </h1>
             <p className="text-sm text-muted-foreground">
-              {date} / 担当: {staffName}
+              {date}{customerName ? ` / ${t("staffLabel", { name: staffName })}` : ""}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleClassify}>
-            <Sparkles className="size-3.5" />
-            AI分類を実行
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={saving || saved}
+            className={cn(
+              saved && "bg-green-600 hover:bg-green-600"
+            )}
+          >
+            {saved ? (
+              <Check className="size-3.5" />
+            ) : (
+              <Save className="size-3.5" />
+            )}
+            {saving ? t("saving") : saved ? t("saved") : tCommon("save")}
           </Button>
           <Button variant="outline" size="sm">
             <FileText className="size-3.5" />
-            PDF
+            {tCommon("pdf")}
           </Button>
           <Button variant="outline" size="sm">
             <FileDown className="size-3.5" />
-            テキスト
+            {tCommon("text")}
           </Button>
         </div>
       </div>
@@ -157,7 +168,7 @@ export function KaruteEditor({
               <Sparkles className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <div>
                 <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  AI要約
+                  {t("aiSummary")}
                 </p>
                 <p className="text-sm leading-relaxed">{aiSummary}</p>
               </div>
@@ -178,7 +189,7 @@ export function KaruteEditor({
         <div className="flex-1 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-muted-foreground">
-              エントリー ({entries.length})
+              {t("entries", { count: entries.length })}
             </h2>
             <Button
               variant="outline"
@@ -186,7 +197,7 @@ export function KaruteEditor({
               onClick={() => setShowAddForm(!showAddForm)}
             >
               <Plus className="size-3" />
-              エントリー追加
+              {t("addEntry")}
             </Button>
           </div>
 
@@ -211,14 +222,14 @@ export function KaruteEditor({
                 ))}
               </div>
               <Textarea
-                placeholder="エントリー内容を入力..."
+                placeholder={t("entryPlaceholder")}
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
                 className="min-h-12 text-sm"
               />
               <div className="flex items-center gap-1">
                 <Button size="xs" onClick={handleAddEntry}>
-                  追加
+                  {tCommon("add")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -228,7 +239,7 @@ export function KaruteEditor({
                     setNewContent("")
                   }}
                 >
-                  キャンセル
+                  {tCommon("cancel")}
                 </Button>
               </div>
             </div>
@@ -249,7 +260,7 @@ export function KaruteEditor({
           {entries.length === 0 && (
             <div className="rounded-lg border border-dashed py-12 text-center">
               <p className="text-sm text-muted-foreground">
-                エントリーがありません。AI分類を実行するか、手動で追加してください。
+                {t("emptyEntries")}
               </p>
             </div>
           )}

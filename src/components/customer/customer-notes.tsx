@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +16,8 @@ interface CustomerNotesProps {
 }
 
 export function CustomerNotes({ phone, email, notes: initialNotes, tags }: CustomerNotesProps) {
+  const t = useTranslations('customers')
+  const tCommon = useTranslations('common')
   const [notes, setNotes] = useState(initialNotes)
   const [saved, setSaved] = useState(true)
 
@@ -33,16 +36,16 @@ export function CustomerNotes({ phone, email, notes: initialNotes, tags }: Custo
       {/* Contact Info */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">連絡先情報</CardTitle>
+          <CardTitle className="text-base">{t('contactInfo')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">電話番号</span>
+            <span className="text-muted-foreground">{t('phone')}</span>
             <span>{phone || '—'}</span>
           </div>
           <Separator />
           <div className="flex justify-between">
-            <span className="text-muted-foreground">メール</span>
+            <span className="text-muted-foreground">{t('email')}</span>
             <span>{email || '—'}</span>
           </div>
         </CardContent>
@@ -51,7 +54,7 @@ export function CustomerNotes({ phone, email, notes: initialNotes, tags }: Custo
       {/* Tags */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">タグ</CardTitle>
+          <CardTitle className="text-base">{t('tags')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-1.5">
@@ -59,7 +62,7 @@ export function CustomerNotes({ phone, email, notes: initialNotes, tags }: Custo
               <Badge key={tag} variant="secondary">{tag}</Badge>
             ))}
             <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground">
-              + 追加
+              {t('addTag')}
             </Button>
           </div>
         </CardContent>
@@ -69,12 +72,12 @@ export function CustomerNotes({ phone, email, notes: initialNotes, tags }: Custo
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">メモ</CardTitle>
+            <CardTitle className="text-base">{t('notes')}</CardTitle>
             {!saved && (
-              <Button size="sm" onClick={handleSave}>保存</Button>
+              <Button size="sm" onClick={handleSave}>{tCommon('save')}</Button>
             )}
             {saved && notes !== initialNotes && (
-              <span className="text-xs text-green-600">保存済み</span>
+              <span className="text-xs text-green-600">{tCommon('saved')}</span>
             )}
           </div>
         </CardHeader>
@@ -82,7 +85,7 @@ export function CustomerNotes({ phone, email, notes: initialNotes, tags }: Custo
           <Textarea
             value={notes}
             onChange={(e) => handleNotesChange(e.target.value)}
-            placeholder="お客様に関するメモ..."
+            placeholder={t('notesPlaceholder')}
             rows={4}
           />
         </CardContent>

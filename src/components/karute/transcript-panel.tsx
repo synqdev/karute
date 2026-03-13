@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 
 export interface TranscriptSegment {
@@ -21,6 +22,8 @@ function formatTime(seconds: number): string {
 }
 
 export function TranscriptPanel({ segments, className }: TranscriptPanelProps) {
+  const t = useTranslations("karute")
+
   return (
     <div
       className={cn(
@@ -29,7 +32,7 @@ export function TranscriptPanel({ segments, className }: TranscriptPanelProps) {
       )}
     >
       <div className="border-b px-3 py-2">
-        <h3 className="text-sm font-medium">文字起こし</h3>
+        <h3 className="text-sm font-medium">{t("transcript")}</h3>
       </div>
       <div className="flex-1 overflow-y-auto p-3">
         <div className="space-y-3">

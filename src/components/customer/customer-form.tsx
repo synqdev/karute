@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,6 +21,8 @@ interface CustomerFormProps {
 }
 
 export function CustomerForm({ open, onOpenChange, onSaved }: CustomerFormProps) {
+  const t = useTranslations('customerForm')
+  const tCommon = useTranslations('common')
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [form, setForm] = useState<CreateCustomerInput>({
@@ -74,14 +77,14 @@ export function CustomerForm({ open, onOpenChange, onSaved }: CustomerFormProps)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>新規顧客</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">名前 *</Label>
+            <Label htmlFor="name">{t('nameLabel')}</Label>
             <Input
               id="name"
-              placeholder="山田 花子"
+              placeholder={t('namePlaceholder')}
               value={form.name}
               onChange={(e) => updateField('name', e.target.value)}
               autoFocus
@@ -92,10 +95,10 @@ export function CustomerForm({ open, onOpenChange, onSaved }: CustomerFormProps)
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="nameKana">フリガナ</Label>
+            <Label htmlFor="nameKana">{t('kanaLabel')}</Label>
             <Input
               id="nameKana"
-              placeholder="ヤマダ ハナコ"
+              placeholder={t('kanaPlaceholder')}
               value={form.nameKana}
               onChange={(e) => updateField('nameKana', e.target.value)}
             />
@@ -103,21 +106,21 @@ export function CustomerForm({ open, onOpenChange, onSaved }: CustomerFormProps)
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">電話番号</Label>
+              <Label htmlFor="phone">{t('phoneLabel')}</Label>
               <Input
                 id="phone"
                 type="tel"
-                placeholder="090-1234-5678"
+                placeholder={t('phonePlaceholder')}
                 value={form.phone}
                 onChange={(e) => updateField('phone', e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">メール</Label>
+              <Label htmlFor="email">{t('emailLabel')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="example@email.com"
+                placeholder={t('emailPlaceholder')}
                 value={form.email}
                 onChange={(e) => updateField('email', e.target.value)}
               />
@@ -128,10 +131,10 @@ export function CustomerForm({ open, onOpenChange, onSaved }: CustomerFormProps)
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">メモ</Label>
+            <Label htmlFor="notes">{t('notesLabel')}</Label>
             <Textarea
               id="notes"
-              placeholder="お客様に関するメモ..."
+              placeholder={t('notesPlaceholder')}
               rows={3}
               value={form.notes}
               onChange={(e) => updateField('notes', e.target.value)}
@@ -144,10 +147,10 @@ export function CustomerForm({ open, onOpenChange, onSaved }: CustomerFormProps)
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              キャンセル
+              {tCommon('cancel')}
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? '保存中...' : '保存'}
+              {saving ? t('saving') : tCommon('save')}
             </Button>
           </div>
         </form>

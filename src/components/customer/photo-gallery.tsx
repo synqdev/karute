@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
@@ -10,11 +11,11 @@ interface Photo {
   date: string
 }
 
-const typeLabels: Record<Photo['photoType'], { label: string; className: string }> = {
-  BEFORE: { label: 'ビフォー', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  AFTER: { label: 'アフター', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  PROGRESS: { label: '経過', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-  GENERAL: { label: '一般', className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
+const typeClassNames: Record<Photo['photoType'], string> = {
+  BEFORE: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  AFTER: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  PROGRESS: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  GENERAL: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
 }
 
 const mockPhotos: Photo[] = [
@@ -25,11 +26,13 @@ const mockPhotos: Photo[] = [
 ]
 
 export function PhotoGallery() {
+  const t = useTranslations('photos')
+
   if (mockPhotos.length === 0) {
     return (
       <div className="flex flex-col items-center py-12 text-center">
-        <p className="text-muted-foreground">写真はまだありません</p>
-        <Button variant="outline" className="mt-4">写真を追加</Button>
+        <p className="text-muted-foreground">{t('noPhotos')}</p>
+        <Button variant="outline" className="mt-4">{t('addPhoto')}</Button>
       </div>
     )
   }
@@ -37,11 +40,11 @@ export function PhotoGallery() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button variant="outline" size="sm">写真を追加</Button>
+        <Button variant="outline" size="sm">{t('addPhoto')}</Button>
       </div>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {mockPhotos.map((photo) => {
-          const config = typeLabels[photo.photoType]
+          const className = typeClassNames[photo.photoType]
           return (
             <div
               key={photo.id}
@@ -51,8 +54,8 @@ export function PhotoGallery() {
                 📷
               </div>
               <div className="p-3">
-                <Badge variant="secondary" className={config.className}>
-                  {config.label}
+                <Badge variant="secondary" className={className}>
+                  {t(`types.${photo.photoType}` as Parameters<typeof t>[0])}
                 </Badge>
                 <p className="mt-1.5 text-sm font-medium">{photo.caption}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{photo.date}</p>

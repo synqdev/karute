@@ -1,6 +1,7 @@
 "use client"
 
 import { Mic, Pause, Play, Square } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { useAudioRecorder } from "@/hooks/useAudioRecorder"
 import { RecordingTimer } from "./recording-timer"
@@ -11,6 +12,7 @@ interface RecordingControlsProps {
 }
 
 export function RecordingControls({ onRecordingComplete }: RecordingControlsProps) {
+  const t = useTranslations("recording")
   const {
     status,
     startRecording,
@@ -44,7 +46,7 @@ export function RecordingControls({ onRecordingComplete }: RecordingControlsProp
           <button
             onClick={startRecording}
             className="group flex size-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/50"
-            aria-label="録音開始"
+            aria-label={t("startLabel")}
           >
             <Mic className="size-8 transition-transform duration-200 group-hover:scale-110" />
           </button>
@@ -55,7 +57,7 @@ export function RecordingControls({ onRecordingComplete }: RecordingControlsProp
               variant="outline"
               size="icon-lg"
               onClick={status === "paused" ? resumeRecording : pauseRecording}
-              aria-label={status === "paused" ? "再開" : "一時停止"}
+              aria-label={status === "paused" ? t("resume") : t("pause")}
               className="size-14 rounded-full"
             >
               {status === "paused" ? (
@@ -70,7 +72,7 @@ export function RecordingControls({ onRecordingComplete }: RecordingControlsProp
               variant="destructive"
               size="icon-lg"
               onClick={handleStop}
-              aria-label="停止"
+              aria-label={t("stop")}
               className="size-14 rounded-full"
             >
               <Square className="size-5" />

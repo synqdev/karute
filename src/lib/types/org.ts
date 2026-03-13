@@ -10,9 +10,6 @@ export type Staff = {
   id: string
   name: string
   role: StaffRole
+  initials: string
+  avatarUrl?: string
 }
-
-export type OrgContextValue = {
-  org: Organization
-  staff: Staff
-} | null

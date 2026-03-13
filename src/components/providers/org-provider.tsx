@@ -1,33 +1,47 @@
 'use client'
 
-import { createContext, useContext } from 'react'
-import type { OrgContextValue } from '@/lib/types/org'
+import { createContext, useContext, useState } from 'react'
+import type { Organization, Staff } from '@/lib/types/org'
 
-const OrgContext = createContext<OrgContextValue>(null)
-
-// Mock data — will be replaced with real Supabase query
-const MOCK_ORG_CONTEXT: OrgContextValue = {
-  org: {
-    id: 'org_mock_001',
-    name: 'さくら整体院',
-    plan: 'PRO',
-  },
-  staff: {
-    id: 'staff_mock_001',
-    name: '田中太郎',
-    role: 'OWNER',
-  },
+interface OrgContextValue {
+  org: Organization
+  staff: Staff
+  allStaff: Staff[]
+  switchStaff: (id: string) => void
 }
 
+const OrgContext = createContext<OrgContextValue | null>(null)
+
+const MOCK_ORG: Organization = {
+  id: '5842c10a-c58b-45ea-a820-104720de3f25',
+  name: 'さくら整体院',
+  plan: 'PRO',
+}
+
+const MOCK_ALL_STAFF: Staff[] = [
+  { id: 'c9bb76b0-28c0-4002-83fb-5d7390c19eeb', name: 'Anthony', role: 'OWNER', initials: 'AL' },
+  { id: 'adb5b48e-813c-44f6-96f6-2c1997773c2f', name: 'Jon', role: 'STYLIST', initials: 'JC' },
+  { id: '01c50220-b653-43ee-842e-9fb06fe8677c', name: 'Liam', role: 'STYLIST', initials: 'LM' },
+]
+
 export function OrgProvider({
-  value,
   children,
 }: {
-  value?: OrgContextValue
   children: React.ReactNode
 }) {
+  const [activeStaffId, setActiveStaffId] = useState(MOCK_ALL_STAFF[0].id)
+
+  const staff = MOCK_ALL_STAFF.find((s) => s.id === activeStaffId) ?? MOCK_ALL_STAFF[0]
+
   return (
-    <OrgContext.Provider value={value ?? MOCK_ORG_CONTEXT}>
+    <OrgContext.Provider
+      value={{
+        org: MOCK_ORG,
+        staff,
+        allStaff: MOCK_ALL_STAFF,
+        switchStaff: setActiveStaffId,
+      }}
+    >
       {children}
     </OrgContext.Provider>
   )

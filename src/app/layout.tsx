@@ -1,6 +1,6 @@
-import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
+import { ThemeProvider } from '@/components/providers/theme-provider'
 import './globals.css'
 
 const geistSans = Geist({
@@ -13,23 +13,19 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-export const metadata: Metadata = {
-  title: 'Karute - AI Electronic Chart System',
-  description:
-    'AI-powered electronic chart system for salons. Record, transcribe, and automatically classify customer conversations.',
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja" suppressHydrationWarning>
+    <html suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
         <Toaster />
       </body>
     </html>

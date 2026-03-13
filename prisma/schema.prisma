@@ -8,115 +8,87 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================================================
-// Organization & Auth
-// ============================================================================
-
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  plan      Plan     @default(FREE)
-  settings  Json     @default("{}")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  staff             Staff[]
-  customers         Customer[]
+  id                String             @id @default(uuid())
+  name              String
+  slug              String             @unique
+  plan              Plan               @default(FREE)
+  settings          Json               @default("{}")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
   appointments      Appointment[]
-  recordingSessions RecordingSession[]
-  karuteRecords     KaruteRecord[]
-  timelineEvents    TimelineEvent[]
-  customerPhotos    CustomerPhoto[]
   customerInsights  CustomerInsight[]
+  customerPhotos    CustomerPhoto[]
+  customers         Customer[]
+  karuteRecords     KaruteRecord[]
+  recordingSessions RecordingSession[]
+  staff             Staff[]
+  timelineEvents    TimelineEvent[]
 
   @@map("organizations")
 }
 
-enum Plan {
-  FREE
-  PRO
-}
-
 model Staff {
-  id        String   @id @default(uuid())
-  orgId     String   @map("org_id")
-  userId    String   @unique @map("user_id") // Supabase Auth user ID
-  name      String
-  nameKana  String?  @map("name_kana")
-  email     String
-  role      StaffRole @default(STYLIST)
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  org               Organization       @relation(fields: [orgId], references: [id])
+  id                String             @id @default(uuid())
+  orgId             String             @map("org_id")
+  userId            String             @unique @map("user_id")
+  name              String
+  nameKana          String?            @map("name_kana")
+  email             String
+  role              StaffRole          @default(STYLIST)
+  isActive          Boolean            @default(true) @map("is_active")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
   appointments      Appointment[]
-  recordingSessions RecordingSession[]
   karuteRecords     KaruteRecord[]
+  recordingSessions RecordingSession[]
+  org               Organization       @relation(fields: [orgId], references: [id])
 
   @@index([orgId])
   @@map("staff")
 }
 
-enum StaffRole {
-  OWNER
-  ADMIN
-  STYLIST
-  ASSISTANT
-}
-
-// ============================================================================
-// Customers
-// ============================================================================
-
 model Customer {
-  id        String   @id @default(uuid())
-  orgId     String   @map("org_id")
-  name      String
-  nameKana  String?  @map("name_kana")
-  phone     String?
-  email     String?
-  notes     String?
-  tags      String[] @default([])
-  profile   Json     @default("{}") // Flexible custom fields
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  org               Organization       @relation(fields: [orgId], references: [id])
+  id                String             @id @default(uuid())
+  orgId             String             @map("org_id")
+  name              String
+  nameKana          String?            @map("name_kana")
+  phone             String?
+  email             String?
+  notes             String?
+  tags              String[]           @default([])
+  profile           Json               @default("{}")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
   appointments      Appointment[]
-  recordingSessions RecordingSession[]
-  karuteRecords     KaruteRecord[]
-  timelineEvents    TimelineEvent[]
-  photos            CustomerPhoto[]
   insights          CustomerInsight[]
+  photos            CustomerPhoto[]
+  org               Organization       @relation(fields: [orgId], references: [id])
+  karuteRecords     KaruteRecord[]
+  recordingSessions RecordingSession[]
+  timelineEvents    TimelineEvent[]
 
   @@index([orgId])
   @@index([orgId, name])
   @@map("customers")
 }
 
-// ============================================================================
-// Appointments
-// ============================================================================
-
 model Appointment {
-  id         String            @id @default(uuid())
-  orgId      String            @map("org_id")
-  customerId String            @map("customer_id")
-  staffId    String            @map("staff_id")
-  startsAt   DateTime          @map("starts_at")
-  endsAt     DateTime          @map("ends_at")
-  status     AppointmentStatus @default(SCHEDULED)
-  notes      String?
-  createdAt  DateTime          @default(now()) @map("created_at")
-  updatedAt  DateTime          @updatedAt @map("updated_at")
-
-  org               Organization       @relation(fields: [orgId], references: [id])
+  id                String             @id @default(uuid())
+  orgId             String             @map("org_id")
+  customerId        String             @map("customer_id")
+  staffId           String             @map("staff_id")
+  startsAt          DateTime           @map("starts_at")
+  endsAt            DateTime           @map("ends_at")
+  status            AppointmentStatus  @default(SCHEDULED)
+  notes             String?
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
   customer          Customer           @relation(fields: [customerId], references: [id])
+  org               Organization       @relation(fields: [orgId], references: [id])
   staff             Staff              @relation(fields: [staffId], references: [id])
-  recordingSessions RecordingSession[]
   karuteRecords     KaruteRecord[]
+  recordingSessions RecordingSession[]
 
   @@index([orgId, startsAt])
   @@index([customerId])
@@ -124,98 +96,66 @@ model Appointment {
   @@map("appointments")
 }
 
-enum AppointmentStatus {
-  SCHEDULED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
-
-// ============================================================================
-// Recording & Transcription
-// ============================================================================
-
 model RecordingSession {
-  id               String          @id @default(uuid())
-  orgId            String          @map("org_id")
-  customerId       String          @map("customer_id")
-  staffId          String          @map("staff_id")
-  appointmentId    String?         @map("appointment_id")
-  audioStoragePath String?         @map("audio_storage_path")
-  durationSeconds  Int?            @map("duration_seconds")
-  status           RecordingStatus @default(RECORDING)
-  createdAt        DateTime        @default(now()) @map("created_at")
-  updatedAt        DateTime        @updatedAt @map("updated_at")
-
-  org          Organization           @relation(fields: [orgId], references: [id])
-  customer     Customer               @relation(fields: [customerId], references: [id])
-  staff        Staff                  @relation(fields: [staffId], references: [id])
-  appointment  Appointment?           @relation(fields: [appointmentId], references: [id])
-  segments     TranscriptionSegment[]
-  karuteRecord KaruteRecord?
+  id               String                 @id @default(uuid())
+  orgId            String                 @map("org_id")
+  customerId       String?                @map("customer_id")
+  staffId          String                 @map("staff_id")
+  appointmentId    String?                @map("appointment_id")
+  audioStoragePath String?                @map("audio_storage_path")
+  durationSeconds  Int?                   @map("duration_seconds")
+  status           RecordingStatus        @default(RECORDING)
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+  karuteRecord     KaruteRecord?
+  appointment      Appointment?           @relation(fields: [appointmentId], references: [id])
+  customer         Customer?              @relation(fields: [customerId], references: [id])
+  org              Organization           @relation(fields: [orgId], references: [id])
+  staff            Staff                  @relation(fields: [staffId], references: [id])
+  segments         TranscriptionSegment[]
 
   @@index([orgId])
   @@index([customerId])
   @@map("recording_sessions")
 }
 
-enum RecordingStatus {
-  RECORDING
-  UPLOADING
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-
 model TranscriptionSegment {
-  id                 String   @id @default(uuid())
-  recordingSessionId String   @map("recording_session_id")
-  segmentIndex       Int      @map("segment_index")
+  id                 String           @id @default(uuid())
+  recordingSessionId String           @map("recording_session_id")
+  segmentIndex       Int              @map("segment_index")
   text               String
-  startTime          Float    @map("start_time")
-  endTime            Float    @map("end_time")
-  speakerLabel       String?  @map("speaker_label")
+  startTime          Float            @map("start_time")
+  endTime            Float            @map("end_time")
+  speakerLabel       String?          @map("speaker_label")
   confidence         Float?
-  createdAt          DateTime @default(now()) @map("created_at")
-
-  recordingSession RecordingSession @relation(fields: [recordingSessionId], references: [id], onDelete: Cascade)
+  createdAt          DateTime         @default(now()) @map("created_at")
+  recordingSession   RecordingSession @relation(fields: [recordingSessionId], references: [id], onDelete: Cascade)
 
   @@index([recordingSessionId])
   @@map("transcription_segments")
 }
 
-// ============================================================================
-// Karute (Electronic Chart)
-// ============================================================================
-
 model KaruteRecord {
-  id                 String       @id @default(uuid())
-  orgId              String       @map("org_id")
-  customerId         String       @map("customer_id")
-  staffId            String       @map("staff_id")
-  appointmentId      String?      @map("appointment_id")
-  recordingSessionId String?      @unique @map("recording_session_id")
-  status             KaruteStatus @default(DRAFT)
-  aiSummary          String?      @map("ai_summary")
-  createdAt          DateTime     @default(now()) @map("created_at")
-  updatedAt          DateTime     @updatedAt @map("updated_at")
-
-  org              Organization      @relation(fields: [orgId], references: [id])
-  customer         Customer          @relation(fields: [customerId], references: [id])
-  staff            Staff             @relation(fields: [staffId], references: [id])
-  appointment      Appointment?      @relation(fields: [appointmentId], references: [id])
-  recordingSession RecordingSession? @relation(fields: [recordingSessionId], references: [id])
-  entries          KaruteEntry[]
+  id                 String            @id @default(uuid())
+  orgId              String            @map("org_id")
+  customerId         String?           @map("customer_id")
+  staffId            String            @map("staff_id")
+  appointmentId      String?           @map("appointment_id")
+  recordingSessionId String?           @unique @map("recording_session_id")
+  status             KaruteStatus      @default(DRAFT)
+  aiSummary          String?           @map("ai_summary")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  entries            KaruteEntry[]
+  appointment        Appointment?      @relation(fields: [appointmentId], references: [id])
+  customer           Customer?         @relation(fields: [customerId], references: [id])
+  org                Organization      @relation(fields: [orgId], references: [id])
+  recordingSession   RecordingSession? @relation(fields: [recordingSessionId], references: [id])
+  staff              Staff             @relation(fields: [staffId], references: [id])
 
   @@index([orgId])
   @@index([customerId])
   @@map("karute_records")
-}
-
-enum KaruteStatus {
-  DRAFT
-  REVIEW
-  APPROVED
 }
 
 model KaruteEntry {
@@ -229,11 +169,98 @@ model KaruteEntry {
   sortOrder      Int           @default(0) @map("sort_order")
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
-
-  karuteRecord KaruteRecord @relation(fields: [karuteRecordId], references: [id], onDelete: Cascade)
+  karuteRecord   KaruteRecord  @relation(fields: [karuteRecordId], references: [id], onDelete: Cascade)
 
   @@index([karuteRecordId])
   @@map("karute_entries")
+}
+
+model TimelineEvent {
+  id         String       @id @default(uuid())
+  orgId      String       @map("org_id")
+  customerId String       @map("customer_id")
+  type       TimelineType
+  title      String
+  body       String?
+  data       Json         @default("{}")
+  source     String?
+  refId      String?      @map("ref_id")
+  occurredAt DateTime     @default(now()) @map("occurred_at")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  customer   Customer     @relation(fields: [customerId], references: [id])
+  org        Organization @relation(fields: [orgId], references: [id])
+
+  @@index([orgId, customerId, occurredAt])
+  @@map("timeline_events")
+}
+
+model CustomerPhoto {
+  id          String       @id @default(uuid())
+  orgId       String       @map("org_id")
+  customerId  String       @map("customer_id")
+  storagePath String       @map("storage_path")
+  caption     String?
+  photoType   PhotoType    @default(GENERAL) @map("photo_type")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  customer    Customer     @relation(fields: [customerId], references: [id])
+  org         Organization @relation(fields: [orgId], references: [id])
+
+  @@index([customerId])
+  @@map("customer_photos")
+}
+
+model CustomerInsight {
+  id         String        @id @default(uuid())
+  orgId      String        @map("org_id")
+  customerId String        @map("customer_id")
+  type       InsightType
+  title      String
+  body       String
+  priority   Float         @default(0.5)
+  action     String?
+  evidence   String?
+  status     InsightStatus @default(ACTIVE)
+  expiresAt  DateTime?     @map("expires_at")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  org        Organization  @relation(fields: [orgId], references: [id])
+
+  @@index([orgId, customerId])
+  @@index([status, expiresAt])
+  @@map("customer_insights")
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+enum StaffRole {
+  OWNER
+  ADMIN
+  STYLIST
+  ASSISTANT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum RecordingStatus {
+  RECORDING
+  UPLOADING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum KaruteStatus {
+  DRAFT
+  REVIEW
+  APPROVED
 }
 
 enum EntryCategory {
@@ -245,30 +272,6 @@ enum EntryCategory {
   NEXT_VISIT
   PRODUCT
   OTHER
-}
-
-// ============================================================================
-// Timeline & Insights
-// ============================================================================
-
-model TimelineEvent {
-  id         String        @id @default(uuid())
-  orgId      String        @map("org_id")
-  customerId String        @map("customer_id")
-  type       TimelineType
-  title      String
-  body       String?
-  data       Json          @default("{}") // Structured metadata
-  source     String?       // e.g., "recording", "manual", "import"
-  refId      String?       @map("ref_id") // Link to related record
-  occurredAt DateTime      @default(now()) @map("occurred_at")
-  createdAt  DateTime      @default(now()) @map("created_at")
-
-  org      Organization @relation(fields: [orgId], references: [id])
-  customer Customer     @relation(fields: [customerId], references: [id])
-
-  @@index([orgId, customerId, occurredAt])
-  @@map("timeline_events")
 }
 
 enum TimelineType {
@@ -283,50 +286,12 @@ enum TimelineType {
   STATUS_CHANGE
 }
 
-model CustomerPhoto {
-  id         String    @id @default(uuid())
-  orgId      String    @map("org_id")
-  customerId String    @map("customer_id")
-  storagePath String   @map("storage_path")
-  caption    String?
-  photoType  PhotoType @default(GENERAL) @map("photo_type")
-  createdAt  DateTime  @default(now()) @map("created_at")
-
-  org      Organization @relation(fields: [orgId], references: [id])
-  customer Customer     @relation(fields: [customerId], references: [id])
-
-  @@index([customerId])
-  @@map("customer_photos")
-}
-
 enum PhotoType {
   BEFORE
   AFTER
   PROGRESS
   GENERAL
   FORM
-}
-
-model CustomerInsight {
-  id         String        @id @default(uuid())
-  orgId      String        @map("org_id")
-  customerId String        @map("customer_id")
-  type       InsightType
-  title      String
-  body       String
-  priority   Float         @default(0.5)
-  action     String?       // Suggested action
-  evidence   String?       // Supporting data
-  status     InsightStatus @default(ACTIVE)
-  expiresAt  DateTime?     @map("expires_at")
-  createdAt  DateTime      @default(now()) @map("created_at")
-
-  org      Organization @relation(fields: [orgId], references: [id])
-  customer Customer     @relation(fields: [customerId], references: [id])
-
-  @@index([orgId, customerId])
-  @@index([status, expiresAt])
-  @@map("customer_insights")
 }
 
 enum InsightType {

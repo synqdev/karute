@@ -29,26 +29,35 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Extract locale prefix from pathname (e.g. /ja/dashboard -> ja)
+  const pathname = request.nextUrl.pathname
+  const localeMatch = pathname.match(/^\/(ja|en)/)
+  const locale = localeMatch ? localeMatch[1] : 'ja'
+  const pathWithoutLocale = localeMatch
+    ? pathname.slice(locale.length + 1) || '/'
+    : pathname
+
   // Allow free tier recording page without auth
-  if (request.nextUrl.pathname.startsWith('/record')) {
+  if (pathWithoutLocale.startsWith('/record')) {
     return supabaseResponse
   }
 
   // Redirect unauthenticated users to login
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/api')
+    !pathWithoutLocale.startsWith('/login') &&
+    !pathname.startsWith('/api') &&
+    !pathname.startsWith('/auth')
   ) {
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = `/${locale}/login`
     return NextResponse.redirect(url)
   }
 
   // Redirect authenticated users away from login
-  if (user && request.nextUrl.pathname.startsWith('/login')) {
+  if (user && pathWithoutLocale.startsWith('/login')) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = `/${locale}/dashboard`
     return NextResponse.redirect(url)
   }
 
