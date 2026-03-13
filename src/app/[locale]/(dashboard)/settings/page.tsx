@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { Settings, Save } from 'lucide-react'
+import { Settings, Save, Check, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +18,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog'
+import { useOrg } from '@/components/providers/org-provider'
 import { cn } from '@/lib/utils'
 
 interface SettingsState {
@@ -88,16 +89,61 @@ function Toggle({
 export default function SettingsPage() {
   const t = useTranslations('settings')
   const tCommon = useTranslations('common')
+  const { org } = useOrg()
   const [settings, setSettings] = useState<SettingsState>(defaultSettings)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [loadingSettings, setLoadingSettings] = useState(true)
+
+  // Load settings from DB on mount
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch(`/api/settings?orgId=${org.id}`)
+        if (!res.ok) return
+        const data = await res.json()
+        const stored = (data.settings || {}) as Partial<SettingsState>
+        setSettings((prev) => ({
+          ...prev,
+          ...stored,
+          organizationName: data.orgName || prev.organizationName,
+        }))
+      } catch {
+        // use defaults
+      } finally {
+        setLoadingSettings(false)
+      }
+    }
+    load()
+  }, [org.id])
 
   const updateSetting = useCallback(<K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }))
+    setSaved(false)
   }, [])
 
-  const handleSave = useCallback(() => {
-    console.log('Settings saved:', settings)
-  }, [settings])
+  const handleSave = useCallback(async () => {
+    setSaving(true)
+    try {
+      const { organizationName, ...rest } = settings
+      await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orgId: org.id,
+          orgName: organizationName,
+          settings: rest,
+        }),
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      console.error('Save failed:', err)
+    } finally {
+      setSaving(false)
+    }
+  }, [settings, org.id])
 
   const handleExportData = useCallback(() => {
     console.log('Exporting all data...')
@@ -116,9 +162,19 @@ export default function SettingsPage() {
           <Settings className="h-7 w-7 text-muted-foreground" />
           <h1 className="text-2xl font-bold">{t('title')}</h1>
         </div>
-        <Button onClick={handleSave} className="gap-2">
-          <Save className="h-4 w-4" />
-          {tCommon('save')}
+        <Button
+          onClick={handleSave}
+          disabled={saving || saved || loadingSettings}
+          className={cn('gap-2', saved && 'bg-green-600 hover:bg-green-600')}
+        >
+          {saving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : saved ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          {saving ? t('saving') : saved ? t('saved') : tCommon('save')}
         </Button>
       </div>
 

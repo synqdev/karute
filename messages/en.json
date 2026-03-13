@@ -233,6 +233,8 @@
   },
   "settings": {
     "title": "Settings",
+    "saving": "Saving...",
+    "saved": "Saved",
     "profile": {
       "title": "Profile",
       "description": "Set up your organization and owner information",
